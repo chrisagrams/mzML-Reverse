@@ -81,12 +81,17 @@ def encode_binary(arr, source_format, source_compression):
         return base64.b64encode(buff)
 
 
-def reverse_binary(element, source_format, source_compression):
+def get_binary_elem(element):
     if element is not None:
         binary_elem = element.find(".//binary", namespaces=tree.getroot().nsmap)
-        arr = decode_binary(binary_elem.text, source_format, source_compression)
-        rev = arr[::-1]
-        binary_elem.text = encode_binary(rev, source_format, source_compression)
+        if binary_elem is not None:
+            return binary_elem
+    return None
+
+
+def simple_reverse(arr):
+    return arr[::-1]
+
 
 
 def update_index_and_scan(spectrum, index, scan):
@@ -98,6 +103,7 @@ def update_index_and_scan(spectrum, index, scan):
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python main.py input.mzML")
+        exit(1)
     input_mzml = sys.argv[1]
     output_mzml = input_mzml.replace(".mzML", "_rev.mzML")
     tree = etree.parse(input_mzml)
@@ -120,7 +126,10 @@ if __name__ == "__main__":
                 for cv_param in binary['cvParams']:
                     if cv_param['accession'] == 'MS:1000515':  # Intensity array
                         data_format, compression = get_encoding_and_compression(binary['cvParams'])
-                        reverse_binary(binary['binaryElement'], data_format, compression)
+                        binary_elem = get_binary_elem(binary['binaryElement'])
+                        arr = decode_binary(binary_elem.text, data_format, compression)
+                        rev = simple_reverse(arr)
+                        binary_elem.text = encode_binary(rev, data_format, compression)
 
         # Update indices
         update_index_and_scan(spectrum, 2 * index + 1, (2 * index + 1) + 1)
