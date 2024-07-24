@@ -132,10 +132,10 @@ if __name__ == "__main__":
         duplicate.attrib['id'] += " rev"
 
         # Get MS Level
-        ms_level = get_ms_level(spectrum)
+        ms_level = get_ms_level(duplicate)
 
         if ms_level > 1:  # Do not reverse MS1 spectra
-            binaries = get_binaries(spectrum)
+            binaries = get_binaries(duplicate)
             for binary in binaries:
                 for cv_param in binary['cvParams']:
                     if args.mass and cv_param['accession'] == 'MS:1000514':     # m/z array
