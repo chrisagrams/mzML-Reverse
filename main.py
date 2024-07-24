@@ -1,3 +1,5 @@
+from math import ceil, floor
+
 from lxml import etree
 from copy import deepcopy
 from tqdm import tqdm
@@ -6,6 +8,12 @@ import struct
 import re
 import sys
 import zlib
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("input_file")
+parser.add_argument("-m", '--mass', action='store_true', required=False, help="Reverse m/z array")
+parser.add_argument("-i", '--inten', action='store_true', required=False, help="Reverse intensity array")
 
 
 def read_mzml(path):
@@ -93,6 +101,14 @@ def simple_reverse(arr):
     return arr[::-1]
 
 
+def mass_reverse(arr):
+    peak = ceil(max(arr))
+    base = floor(min(arr))
+    rev = []
+    for mz in arr:
+        rev.append((peak-mz+base))
+    return rev
+
 
 def update_index_and_scan(spectrum, index, scan):
     spectrum.attrib['index'] = str(index)
@@ -101,10 +117,8 @@ def update_index_and_scan(spectrum, index, scan):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python main.py input.mzML")
-        exit(1)
-    input_mzml = sys.argv[1]
+    args = parser.parse_args()
+    input_mzml = args.input_file
     output_mzml = input_mzml.replace(".mzML", "_rev.mzML")
     tree = etree.parse(input_mzml)
 
@@ -124,7 +138,13 @@ if __name__ == "__main__":
             binaries = get_binaries(spectrum)
             for binary in binaries:
                 for cv_param in binary['cvParams']:
-                    if cv_param['accession'] == 'MS:1000515':  # Intensity array
+                    if args.mass and cv_param['accession'] == 'MS:1000514':     # m/z array
+                        data_format, compression = get_encoding_and_compression(binary['cvParams'])
+                        binary_elem = get_binary_elem(binary['binaryElement'])
+                        arr = decode_binary(binary_elem.text, data_format, compression)
+                        rev = mass_reverse(arr)
+                        binary_elem.text = encode_binary(rev, data_format, compression)
+                    elif args.inten and cv_param['accession'] == 'MS:1000515':  # Intensity array
                         data_format, compression = get_encoding_and_compression(binary['cvParams'])
                         binary_elem = get_binary_elem(binary['binaryElement'])
                         arr = decode_binary(binary_elem.text, data_format, compression)
