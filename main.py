@@ -14,6 +14,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("input_file")
 parser.add_argument("-m", '--mass', action='store_true', required=False, help="Reverse m/z array")
 parser.add_argument("-i", '--inten', action='store_true', required=False, help="Reverse intensity array")
+parser.add_argument("--inplace", action='store_true', required=False, default=False, help="Output only reversed spectra.")
 
 
 def read_mzml(path):
@@ -127,10 +128,13 @@ if __name__ == "__main__":
         scan_info = spectrum.attrib['id']
         scan_number = int(scan_info.split("scan=")[1])
 
-        # Duplicate the spectrum
-        duplicate = deepcopy(spectrum)
-        duplicate.attrib['id'] += " rev"
+        # Duplicate the spectrum (if not inplace)
+        if not args.inplace:
+            duplicate = deepcopy(spectrum)
+        else:
+            duplicate = spectrum
 
+        duplicate.attrib['id'] += " rev"
         # Get MS Level
         ms_level = get_ms_level(duplicate)
 
@@ -151,11 +155,13 @@ if __name__ == "__main__":
                         rev = simple_reverse(arr)
                         binary_elem.text = encode_binary(rev, data_format, compression)
 
-        # Update indices
-        update_index_and_scan(spectrum, 2 * index + 1, (2 * index + 1) + 1)
-        update_index_and_scan(duplicate, 2 * index, (2 * index) + 1)
 
-        # Add reversed/duplicated spectrum before the original
-        spectrum.addprevious(duplicate)
+        if not args.inplace:
+            # Update indices
+            update_index_and_scan(spectrum, 2 * index + 1, (2 * index + 1) + 1)
+            update_index_and_scan(duplicate, 2 * index, (2 * index) + 1)
+
+            # Add reversed/duplicated spectrum before the original
+            spectrum.addprevious(duplicate)
 
     tree.write(output_mzml, pretty_print=True, xml_declaration=True, encoding='UTF-8')
