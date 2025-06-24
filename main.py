@@ -14,6 +14,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("input_file")
 parser.add_argument("-m", '--mass', action='store_true', required=False, help="Reverse m/z array")
 parser.add_argument("-i", '--inten', action='store_true', required=False, help="Reverse intensity array")
+parser.add_argument("--mslevel", default=[2], action="append", type=int, help="MS Levels to reverse")
 parser.add_argument("--inplace", action='store_true', required=False, default=False, help="Output only reversed spectra.")
 
 
@@ -138,7 +139,7 @@ if __name__ == "__main__":
         # Get MS Level
         ms_level = get_ms_level(duplicate)
 
-        if ms_level > 1:  # Do not reverse MS1 spectra
+        if ms_level in args.mslevel:
             binaries = get_binaries(duplicate)
             for binary in binaries:
                 for cv_param in binary['cvParams']:
