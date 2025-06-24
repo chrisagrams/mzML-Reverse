@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("input_file")
 parser.add_argument("-m", '--mass', action='store_true', required=False, help="Reverse m/z array")
 parser.add_argument("-i", '--inten', action='store_true', required=False, help="Reverse intensity array")
-parser.add_argument("--mslevel", default=[2], action="append", type=int, help="MS Levels to reverse")
+parser.add_argument("--mslevel", action="append", type=int, help="MS Levels to reverse")
 parser.add_argument("--inplace", action='store_true', required=False, default=False, help="Output only reversed spectra.")
 
 
@@ -120,6 +120,8 @@ def update_index_and_scan(spectrum, index, scan):
 
 if __name__ == "__main__":
     args = parser.parse_args()
+    if args.mslevel is None:
+        args.mslevel = [2] # MS2 Default
     input_mzml = args.input_file
     output_mzml = input_mzml.replace(".mzML", "_rev.mzML")
     tree = etree.parse(input_mzml)
